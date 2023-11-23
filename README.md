@@ -15,9 +15,11 @@ OCR번역 서비스
 
 
 flask 폴더구성
+<br>
 -flask
   - templetes - hangle.html, ocr.html
   - ocr - ocr.py
   - hangle - hangle.py
   - statics - img - 한글 img파일들
+
 -app.py
