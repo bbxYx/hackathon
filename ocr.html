@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR 및 번역</title>
+</head>
+<body>
+    <h1>이미지 업로드 및 OCR 결과</h1>
+    <input type="file" id="fileInput" accept="image/*" required>
+    <input type="submit" value="업로드 및 처리" onclick="handleFileUpload()">
+    <div id="ocr_result"></div>
+
+    <script>
+    function handleFileUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        // FormData 객체를 생성하여 파일을 담습니다.
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 서버로 POST 요청을 보냅니다.
+        fetch('/ocr/trans', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // 서버 응답을 JSON으로 파싱합니다.
+            return response.json();
+        })
+        .then(data => {
+            // 서버에서 받은 JSON 데이터를 사용합니다.
+            // data.result에 OCR 결과가 들어있을 것으로 예상됩니다.
+            const ocrResultDiv = document.getElementById('ocr_result');
+            ocrResultDiv.textContent = 'OCR 결과: ' + data.result;
+        })
+        .catch(error => {
+            // 오류가 발생한 경우 처리합니다.
+            console.error('오류 발생:', error);
+        });
+    }
+    </script>
+</body>
+</html>

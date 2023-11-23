@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>마우스 드래깅으로 캔버스에 그림 그리기</title>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
+    h2 {
+        font-size: 60px; /* 글씨 크기 설정 */
+        margin-top: -150px; /* 음수값으로 margin-top 설정하여 위로 이동 */
+    }
+    .custom-btn {
+        width: 130px;
+        height: 40px;
+        padding: 10px 25px;
+        border: 2px solid #000;
+        font-family: 'Lato', sans-serif;
+        font-weight: 500;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        display: inline-block;
+        justify-content: center;
+        margin-right: 10px;
+      }
+
+    .custom-btn:last-child {
+    margin-right: 0; /* 마지막 버튼의 오른쪽 마진을 0으로 설정하여 더 이상 간격이 주어지지 않도록 함 */
+     }
+</style>
+</head>
+<body onload="init()" >
+<h2>한글 쓰기 연습</h2>
+<br>
+<br>
+<br>
+<img id="randomImage" alt="Object Detection Result" width="1200" height="100">
+<hr>
+<canvas id="myCanvas" style="background-color:aliceblue" width="1200" height="100"></canvas>
+<br>
+<br>
+<div id="result_area"></div>
+<br>
+<div>
+    <button id="saveBtn" class="custom-btn">결 과 보 기</button>
+    <button id="downloadBtn" class="custom-btn">다 운 로 드</button>
+    <button id="clearBtn" class="custom-btn">초 기 화</button>
+    <button id="refreshBtn" class="custom-btn">다 음 글 씨</button>
+</div>
+<script>
+var canvas, context;
+var images = [
+    '../static/img/img001.jpg',
+    '../static/img/img002.jpg',
+    '../static/img/img003.jpg',
+    '../static/img/img004.jpg',
+    '../static/img/img005.jpg',
+    '../static/img/img006.jpg',
+    '../static/img/img007.jpg',
+    '../static/img/img008.jpg',
+    '../static/img/img009.jpg',
+    '../static/img/img010.jpg',
+    '../static/img/img011.jpg',
+    '../static/img/img012.jpg',
+    '../static/img/img013.jpg',
+    '../static/img/img014.jpg',
+    '../static/img/img015.jpg',
+    '../static/img/img016.jpg',
+    '../static/img/img017.jpg'
+    // 여러 이미지 URL을 추가할 수 있습니다.
+];
+
+function init() {
+    // 랜덤 이미지 선택
+    var randomIndex = Math.floor(Math.random() * images.length);
+    var randomImage = document.getElementById('randomImage');
+    randomImage.src = images[randomIndex];
+
+    canvas = document.getElementById("myCanvas");
+    context = canvas.getContext("2d");
+
+    var refreshBtn = document.getElementById("refreshBtn");
+    var resultArea = document.getElementById("result_area");
+    var saveBtn = document.getElementById("saveBtn"); // saveBtn 변수 선언
+    refreshBtn.addEventListener("click", function() {
+        // 서버 요청 대신에 HTML에서 지정한 문구로 변경
+        resultArea.innerHTML = ''; // 변경하고자 하는 문구로 수정
+        clearCanvas(); // 캔버스 초기화
+        refreshImage(); // 랜덤 이미지 선택 함수 호출
+    });
+
+
+    // 엔터 키를 눌렀을 때 saveBtn 클릭 이벤트 발생
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Enter" || event.keyCode === 13) {
+            saveBtn.click();
+        }
+    });
+
+    context.lineWidth = 2;
+    context.strokeStyle = "black";
+
+    canvas.addEventListener("mousemove", function (e) { move(e) }, false);
+    canvas.addEventListener("mousedown", function (e) { down(e) }, false);
+    canvas.addEventListener("mouseup", function (e) { up(e) }, false);
+    canvas.addEventListener("mouseout", function (e) { out(e) }, false);
+
+    var downloadBtn = document.getElementById("downloadBtn");
+    var clearBtn = document.getElementById("clearBtn");
+    saveBtn.addEventListener("click", function() {
+        var url_data = canvas.toDataURL('image/png');
+        var randomImage = document.getElementById('randomImage');
+        var random_image_src = randomImage.src;
+
+        // 아래는 위 정보를 기반으로 서버에 요청
+        var connection = new XMLHttpRequest();
+        connection.open("POST", "/hangle/check_ssim", true);
+        connection.onload = function(){
+            // 데이터 수신시
+            document.getElementById('result_area').innerHTML = connection.responseText; 
+        }
+
+        var formData = new FormData();
+        formData.append("now_drawed_image", url_data);
+        formData.append("now_text_image", random_image_src);
+        connection.send(formData);
+    });
+
+    downloadBtn.addEventListener("click", function() {
+        var link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'drawing.png';
+        link.click();
+    });
+    clearBtn.addEventListener("click", function() {
+        clearCanvas();
+    });
+}
+
+function refreshImage() {
+    // 랜덤 이미지 선택
+    var randomIndex = Math.floor(Math.random() * images.length);
+    var randomImage = document.getElementById('randomImage');
+    randomImage.src = images[randomIndex];
+}
+
+var startX = 0, startY = 0;
+var drawing = false;
+
+function draw(curX, curY) {
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(curX, curY);
+    context.stroke();
+}
+
+function down(e) {
+    startX = e.clientX - canvas.offsetLeft;
+    startY = e.clientY - canvas.offsetTop;
+    drawing = true;
+}
+
+function up(e) {
+    drawing = false;
+}
+
+function move(e) {
+    if (!drawing) return;
+    var curX = e.clientX - canvas.offsetLeft;
+    var curY = e.clientY - canvas.offsetTop;
+    draw(curX, curY);
+    startX = curX;
+    startY = curY;
+}
+
+function out(e) {
+    drawing = false;
+}
+
+function saveImage() {
+    var link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'drawing.png';
+    link.click();
+}
+
+function clearCanvas() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
+</script>
+</body>
+</html>
